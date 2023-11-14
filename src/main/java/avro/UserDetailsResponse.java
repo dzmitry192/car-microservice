@@ -14,10 +14,10 @@ import org.apache.avro.message.SchemaStore;
 
 @org.apache.avro.specific.AvroGenerated
 public class UserDetailsResponse extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = -6305034698556854603L;
+  private static final long serialVersionUID = -4842610226760564787L;
 
 
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"UserDetailsResponse\",\"namespace\":\"avro\",\"fields\":[{\"name\":\"status\",\"type\":\"int\"},{\"name\":\"userDetails\",\"type\":{\"type\":\"record\",\"name\":\"UserDetails\",\"fields\":[{\"name\":\"username\",\"type\":\"string\"},{\"name\":\"password\",\"type\":\"string\"},{\"name\":\"enabled\",\"type\":\"boolean\"},{\"name\":\"accountNonExpired\",\"type\":\"boolean\"},{\"name\":\"credentialsNonExpired\",\"type\":\"boolean\"},{\"name\":\"accountNonLocked\",\"type\":\"boolean\"},{\"name\":\"authorities\",\"type\":{\"type\":\"array\",\"items\":\"string\"}}]}}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"UserDetailsResponse\",\"namespace\":\"avro\",\"fields\":[{\"name\":\"status\",\"type\":\"int\"},{\"name\":\"userDetails\",\"type\":{\"type\":\"record\",\"name\":\"UserDetails\",\"fields\":[{\"name\":\"id\",\"type\":\"int\"},{\"name\":\"username\",\"type\":\"string\"},{\"name\":\"password\",\"type\":\"string\"},{\"name\":\"enabled\",\"type\":\"boolean\"},{\"name\":\"accountNonExpired\",\"type\":\"boolean\"},{\"name\":\"credentialsNonExpired\",\"type\":\"boolean\"},{\"name\":\"accountNonLocked\",\"type\":\"boolean\"},{\"name\":\"authorities\",\"type\":{\"type\":\"array\",\"items\":\"string\"}}]}}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
 
   private static final SpecificData MODEL$ = new SpecificData();
