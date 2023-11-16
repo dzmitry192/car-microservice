@@ -24,9 +24,9 @@ public class CustomUserDetails implements UserDetails {
 
     public static CustomUserDetails build(avro.UserDetails userDetails) {
         return new CustomUserDetails(Integer.toUnsignedLong(userDetails.getId()),
-                (String) userDetails.getUsername(),
-                (String) userDetails.getPassword(),
-                (String) userDetails.getAuthorities().get(0));
+                userDetails.getUsername().toString(),
+                userDetails.getPassword().toString(),
+                userDetails.getAuthorities().get(0).toString());
     }
 
     @Override

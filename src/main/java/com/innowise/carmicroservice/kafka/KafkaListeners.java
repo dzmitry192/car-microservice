@@ -11,9 +11,8 @@ public class KafkaListeners {
     private final CountDownLatch countDownLatch = new CountDownLatch(1);
     private UserDetailsResponse userDetailsResponse;
 
-    @KafkaListener(topics = "${kafka.topics.user_details_response}", groupId = "user_details_response_id")
+    @KafkaListener(topics = "${kafka.topics.user_details_response}", groupId = "user_details_response_id", containerFactory = "listenerContainerFactory")
     public void userDetailsListener(UserDetailsResponse userDetailsResponse) {
-        System.out.println("UserDetailsResponse was received");
         this.userDetailsResponse = userDetailsResponse;
         countDownLatch.countDown();
     }
