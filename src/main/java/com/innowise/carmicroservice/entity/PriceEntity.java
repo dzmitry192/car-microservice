@@ -19,4 +19,5 @@ public class PriceEntity {
     private int hour;
     @NonNull
     private int day;
+    private boolean isUsed = false;
 }
