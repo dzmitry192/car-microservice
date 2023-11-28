@@ -1,23 +1,19 @@
-package com.innowise.carmicroservice.entity;
+package com.innowise.carmicroservice.dto.car;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
-@Entity
-@Table(name = "cars")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CarEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class CreateCarDto {
     @NotBlank(message = "Band cannot be empty")
     private String band;
     @NotBlank(message = "Model cannot be empty")
@@ -34,6 +30,4 @@ public class CarEntity {
     private int engineCapacity;
     @NotBlank(message = "Color cannot be empty")
     private String color;
-    private boolean isUsed;
-    private Long rentId;
 }

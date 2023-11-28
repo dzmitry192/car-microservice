@@ -1,22 +1,18 @@
-package com.innowise.carmicroservice.entity;
+package com.innowise.carmicroservice.dto.rent;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
-@Entity
-@Table(name = "rent")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class RentEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class CreateRentDto {
     @NotNull(message = "Rental start date cannot be empty")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
     private Date rentalStartDate;
@@ -26,8 +22,4 @@ public class RentEntity {
     @NotNull
     @Min(value = 1, message = "Rental amount should not be less than 0")
     private int rentalAmount;
-    private Long carId;
-    private Long clientId;
-    private Long priceId;
-    private Long paymentId;
 }

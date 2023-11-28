@@ -1,10 +1,15 @@
 package com.innowise.carmicroservice.service.impl;
 
+import com.innowise.carmicroservice.dto.price.CreatePriceDto;
+import com.innowise.carmicroservice.dto.price.PriceDto;
+import com.innowise.carmicroservice.dto.price.UpdatePriceDto;
 import com.innowise.carmicroservice.entity.PriceEntity;
 import com.innowise.carmicroservice.exception.AlreadyExistsException;
 import com.innowise.carmicroservice.exception.BadRequestException;
 import com.innowise.carmicroservice.exception.NotFoundException;
+import com.innowise.carmicroservice.mapper.PriceMapperImpl;
 import com.innowise.carmicroservice.repository.PriceRepository;
+import com.innowise.carmicroservice.repository.RentRepository;
 import com.innowise.carmicroservice.service.PriceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,39 +22,38 @@ import java.util.Optional;
 public class PriceServiceImpl implements PriceService {
 
     private final PriceRepository priceRepository;
+    private final RentRepository rentRepository;
 
     @Override
-    public List<PriceEntity> getPrices() {
-        return priceRepository.findAll();
+    public List<PriceDto> getPrices() {
+        return PriceMapperImpl.INSTANCE.toPriceDtosList(priceRepository.findAll());
     }
 
     @Override
-    public PriceEntity getPriceById(Long id) throws NotFoundException {
+    public PriceDto getPriceById(Long id) throws NotFoundException {
         Optional<PriceEntity> price = priceRepository.findById(id);
-        if(price.isPresent()) {
-            return price.get();
+        if (price.isPresent()) {
+            return PriceMapperImpl.INSTANCE.priceEntityToPriceDto(price.get());
         } else {
             throw new NotFoundException("Price with id = " + id + " not found");
         }
     }
 
     @Override
-    public PriceEntity createPrice(PriceEntity price) throws AlreadyExistsException {
-        if(priceRepository.findByHourAndDay(price.getHour(), price.getDay()).isPresent()) {
-            throw new AlreadyExistsException("Price with hour = " + price.getHour() + ", day = " + price.getDay() + " is already exists");
+    public PriceDto createPrice(CreatePriceDto createPriceDto) throws AlreadyExistsException {
+        if (priceRepository.findByHourAndDay(createPriceDto.getHour(), createPriceDto.getDay()).isPresent()) {
+            throw new AlreadyExistsException("Price with hour = " + createPriceDto.getHour() + ", day = " + createPriceDto.getDay() + " is already exists");
         } else {
-            return priceRepository.save(price);
+            return PriceMapperImpl.INSTANCE.priceEntityToPriceDto(priceRepository.save(PriceMapperImpl.INSTANCE.createPriceDtoToPriceEntity(createPriceDto)));
         }
     }
 
     @Override
-    public PriceEntity updatePriceById(Long priceId, PriceEntity priceEntity) throws NotFoundException {
+    public PriceDto updatePriceById(Long priceId, UpdatePriceDto updatePriceDto) throws NotFoundException {
         Optional<PriceEntity> price = priceRepository.findById(priceId);
 
-        if(price.isPresent()) {
-            price.get().setHour(priceEntity.getHour());
-            price.get().setDay(priceEntity.getDay());
-            return priceRepository.save(price.get());
+        if (price.isPresent()) {
+            return PriceMapperImpl.INSTANCE.priceEntityToPriceDto(priceRepository.save(PriceMapperImpl.INSTANCE.updatePriceDtoToPriceEntity(updatePriceDto, price.get())));
         } else {
             throw new NotFoundException("Price with id = " + priceId + " not found");
         }
@@ -58,13 +62,14 @@ public class PriceServiceImpl implements PriceService {
     @Override
     public String deletePriceById(Long id) throws BadRequestException, NotFoundException {
         Optional<PriceEntity> optionalPrice = priceRepository.findById(id);
-        if(optionalPrice.isPresent()) {
+        if (optionalPrice.isPresent()) {
             PriceEntity price = optionalPrice.get();
-            if(price.isUsed()) {
+            System.out.println(rentRepository.existsByPriceId(price.getId()));
+            if (rentRepository.existsByPriceId(price.getId())) {
                 throw new BadRequestException("Cannot remove price with id = " + id + " because it is in use");
             }
             priceRepository.delete(price);
-            return "Прайс с id = " + id + " был успешно удалён";
+            return "Price with id = " + id + " was successfully deleted";
         } else {
             throw new NotFoundException("Price with id = " + id + " not found");
         }
