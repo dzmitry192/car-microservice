@@ -4,9 +4,7 @@ import com.innowise.carmicroservice.dto.rent.CreateRentDto;
 import com.innowise.carmicroservice.dto.rent.RentDto;
 import com.innowise.carmicroservice.dto.rent.UpdateRentDto;
 import com.innowise.carmicroservice.entity.RentEntity;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
+import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 
 import java.util.List;
@@ -20,9 +18,15 @@ public interface RentMapper {
     @Mapping(target = "priceId", ignore = true)
     @Mapping(target = "paymentId", ignore = true)
     RentEntity createRentDtoToRentEntity(CreateRentDto createRentDto);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     RentEntity updateRentDtoToRentEntity(UpdateRentDto updateRentDto, @MappingTarget RentEntity rentEntity);
+
     RentDto rentEntityToRentDto(RentEntity rentEntity);
+
     RentEntity rentDtoToRentEntity(RentDto rentDto);
+
     List<RentDto> toRentDtosList(List<RentEntity> rentEntities);
+
     List<RentEntity> toRentEntitiesList(List<RentDto> rentDtos);
 }

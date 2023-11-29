@@ -17,5 +17,5 @@ public class UpdateRentDto {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
     private Date rentalEndDate;
     @Min(value = 1, message = "Rental amount should not be less than 0")
-    private int rentalAmount;
+    private Integer rentalAmount;
 }

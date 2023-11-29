@@ -13,7 +13,7 @@ import java.util.Date;
 @AllArgsConstructor
 public class UpdatePaymentDto {
     @Min(value = 1, message = "Amount should not be less than 0")
-    private int amount;
+    private Integer amount;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
     private Date paymentDate;
 }

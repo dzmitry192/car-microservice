@@ -1,14 +1,17 @@
 package com.innowise.carmicroservice.service.impl;
 
+import com.innowise.carmicroservice.dto.reservation.CreateReservationDto;
+import com.innowise.carmicroservice.dto.reservation.ReservationDto;
+import com.innowise.carmicroservice.dto.reservation.UpdateReservationDto;
 import com.innowise.carmicroservice.entity.CarEntity;
 import com.innowise.carmicroservice.entity.ReservationEntity;
 import com.innowise.carmicroservice.exception.BadRequestException;
 import com.innowise.carmicroservice.exception.NotFoundException;
+import com.innowise.carmicroservice.mapper.ReservationMapperImpl;
 import com.innowise.carmicroservice.repository.CarRepository;
 import com.innowise.carmicroservice.repository.ReservationRepository;
 import com.innowise.carmicroservice.service.ReservationService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,54 +25,55 @@ public class ReservationServiceImpl implements ReservationService {
     private final ReservationRepository reservationRepository;
 
     @Override
-    public List<ReservationEntity> getReservations() {
-        return reservationRepository.findAll();
+    public List<ReservationDto> getReservations() {
+        return ReservationMapperImpl.INSTANCE.toReservationDtosList(reservationRepository.findAll());
     }
 
     @Override
-    public ReservationEntity getReservationById(Long reservationId) throws NotFoundException {
+    public ReservationDto getReservationById(Long reservationId) throws NotFoundException {
         Optional<ReservationEntity> optionalReservation = reservationRepository.findById(reservationId);
-        if(optionalReservation.isPresent()) {
-            return optionalReservation.get();
+        if (optionalReservation.isPresent()) {
+            return ReservationMapperImpl.INSTANCE.reservationEntityToReservationDto(optionalReservation.get());
         } else {
             throw new NotFoundException("Reservation with id = " + reservationId + " not found");
         }
     }
 
     @Override
-    public ReservationEntity createReservation(Long carId, Long clientId, ReservationEntity reservationEntity) throws NotFoundException, BadRequestException {
+    public ReservationDto createReservation(Long carId, Long clientId, CreateReservationDto createReservationDto) throws NotFoundException, BadRequestException {
         Optional<CarEntity> optionalCar = carRepository.findById(carId);
-        if(optionalCar.isEmpty()) {
+        if (optionalCar.isEmpty()) {
             throw new NotFoundException("Car with id = " + carId + " not found");
         }
         CarEntity car = optionalCar.get();
-        if(car.isUsed()) {
+        if (car.isUsed()) {
             throw new BadRequestException("Cannot set reservation because it's already in use");
         }
 
-        reservationEntity.setCarId(carId);
-        reservationEntity.setClientId(clientId);
+        ReservationEntity reservation = ReservationMapperImpl.INSTANCE.createReservationDtoToReservationEntity(createReservationDto);
+        reservation.setCarId(carId);
+        reservation.setClientId(clientId);
 
-        return reservationRepository.save(reservationEntity);
+        car.setUsed(true);
+        carRepository.save(car);
+
+        return ReservationMapperImpl.INSTANCE.reservationEntityToReservationDto(reservationRepository.save(reservation));
     }
 
     @Override
-    public ReservationEntity updateReservationById(Long reservationId, ReservationEntity reservationEntity) throws NotFoundException {
+    public ReservationDto updateReservationById(Long reservationId, UpdateReservationDto updateReservationDto) throws NotFoundException {
         Optional<ReservationEntity> optionalReservation = reservationRepository.findById(reservationId);
-        if(optionalReservation.isEmpty()) {
+        if (optionalReservation.isEmpty()) {
             throw new NotFoundException("Reservation with id =" + reservationId + " not found");
         }
-        ReservationEntity reservation  = optionalReservation.get();
-        reservation.setReservationStartDate(reservationEntity.getReservationStartDate());
-        reservation.setReservationEndDate(reservationEntity.getReservationEndDate());
-
-        return reservationRepository.save(reservation);
+        ReservationEntity reservation = optionalReservation.get();
+        return ReservationMapperImpl.INSTANCE.reservationEntityToReservationDto(reservationRepository.save(ReservationMapperImpl.INSTANCE.updateReservationDtoToReservationEntity(updateReservationDto, reservation)));
     }
 
     @Override
     public String deleteReservationById(Long reservationId) throws NotFoundException {
         Optional<ReservationEntity> optionalReservation = reservationRepository.findById(reservationId);
-        if(optionalReservation.isEmpty()) {
+        if (optionalReservation.isEmpty()) {
             throw new NotFoundException("Reservation with id =" + reservationId + " not found");
         }
         ReservationEntity reservation = optionalReservation.get();

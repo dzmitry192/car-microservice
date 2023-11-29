@@ -19,6 +19,6 @@ public class UpdateCarDto {
     private String licensePlate;
     private String fuelType;
     @Min(value = 1, message = "Engine capacity cannot by less than 0")
-    private int engineCapacity;
+    private Integer engineCapacity;
     private String color;
 }

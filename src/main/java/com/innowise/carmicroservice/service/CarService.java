@@ -10,9 +10,13 @@ import com.innowise.carmicroservice.exception.NotFoundException;
 import java.util.List;
 
 public interface CarService {
-    List<CarDto> getCars();
+    List<CarDto> getCars(Integer offset, Integer limit);
+
     CarDto getCarById(Long carId) throws NotFoundException;
+
     CarDto createCar(CreateCarDto carEntity) throws AlreadyExistsException;
+
     CarDto updateCarById(Long carId, UpdateCarDto updateCarDto) throws NotFoundException;
+
     String deleteCarById(Long carId) throws NotFoundException, BadRequestException;
 }

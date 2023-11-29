@@ -50,10 +50,10 @@ public class PriceServiceImpl implements PriceService {
 
     @Override
     public PriceDto updatePriceById(Long priceId, UpdatePriceDto updatePriceDto) throws NotFoundException {
-        Optional<PriceEntity> price = priceRepository.findById(priceId);
-
-        if (price.isPresent()) {
-            return PriceMapperImpl.INSTANCE.priceEntityToPriceDto(priceRepository.save(PriceMapperImpl.INSTANCE.updatePriceDtoToPriceEntity(updatePriceDto, price.get())));
+        Optional<PriceEntity> optionalPrice = priceRepository.findById(priceId);
+        if (optionalPrice.isPresent()) {
+            PriceEntity price = optionalPrice.get();
+            return PriceMapperImpl.INSTANCE.priceEntityToPriceDto(priceRepository.save(PriceMapperImpl.INSTANCE.updatePriceDtoToPriceEntity(updatePriceDto, price)));
         } else {
             throw new NotFoundException("Price with id = " + priceId + " not found");
         }
@@ -64,7 +64,6 @@ public class PriceServiceImpl implements PriceService {
         Optional<PriceEntity> optionalPrice = priceRepository.findById(id);
         if (optionalPrice.isPresent()) {
             PriceEntity price = optionalPrice.get();
-            System.out.println(rentRepository.existsByPriceId(price.getId()));
             if (rentRepository.existsByPriceId(price.getId())) {
                 throw new BadRequestException("Cannot remove price with id = " + id + " because it is in use");
             }

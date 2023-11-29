@@ -11,6 +11,7 @@ import com.innowise.carmicroservice.mapper.CarMapperImpl;
 import com.innowise.carmicroservice.repository.CarRepository;
 import com.innowise.carmicroservice.service.CarService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,14 +24,14 @@ public class CarServiceImpl implements CarService {
     private final CarRepository carRepository;
 
     @Override
-    public List<CarDto> getCars() {
-        return carRepository.findAll().stream().map(CarMapperImpl.INSTANCE::carEntityToCarDto).toList();
+    public List<CarDto> getCars(Integer offset, Integer limit) {
+        return carRepository.findAll(PageRequest.of(offset, limit)).stream().map(CarMapperImpl.INSTANCE::carEntityToCarDto).toList();
     }
 
     @Override
     public CarDto getCarById(Long carId) throws NotFoundException {
         Optional<CarEntity> car = carRepository.findById(carId);
-        if(car.isEmpty()) {
+        if (car.isEmpty()) {
             throw new NotFoundException("Car with id = " + carId + " not found");
         }
         return CarMapperImpl.INSTANCE.carEntityToCarDto(car.get());
@@ -38,7 +39,7 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public CarDto createCar(CreateCarDto createCarDto) throws AlreadyExistsException {
-        if(carRepository.existsByLicensePlate(createCarDto.getLicensePlate())) {
+        if (carRepository.existsByLicensePlate(createCarDto.getLicensePlate())) {
             throw new AlreadyExistsException("Car with license plate = " + createCarDto.getLicensePlate() + " is already exists");
         }
         return CarMapperImpl.INSTANCE.carEntityToCarDto(carRepository.save(CarMapperImpl.INSTANCE.createCarDtoToCarEntity(createCarDto)));
@@ -47,23 +48,25 @@ public class CarServiceImpl implements CarService {
     @Override
     public CarDto updateCarById(Long carId, UpdateCarDto updateCarDto) throws NotFoundException {
         Optional<CarEntity> optionalCar = carRepository.findById(carId);
-        if(optionalCar.isEmpty()) {
+        if (optionalCar.isEmpty()) {
             throw new NotFoundException("Car with id = " + carId + " not found");
         }
-        return CarMapperImpl.INSTANCE.carEntityToCarDto(CarMapperImpl.INSTANCE.updateCarDtoToCarEntity(updateCarDto, optionalCar.get()));
+        CarEntity car = optionalCar.get();
+        return CarMapperImpl.INSTANCE.carEntityToCarDto(carRepository.save(CarMapperImpl.INSTANCE.updateCarDtoToCarEntity(updateCarDto, car)));
     }
 
     @Override
     public String deleteCarById(Long carId) throws NotFoundException, BadRequestException {
         Optional<CarEntity> optionalCar = carRepository.findById(carId);
-        if(optionalCar.isEmpty()) {
+        if (optionalCar.isEmpty()) {
             throw new NotFoundException("Car with id = " + carId + " not found");
         }
-        if(optionalCar.get().isUsed()) {
+        CarEntity car = optionalCar.get();
+        if (car.isUsed()) {
             throw new BadRequestException("Cannot delete car with id = " + carId + " because it's already in use");
         }
 
-        carRepository.delete(optionalCar.get());
+        carRepository.delete(car);
 
         return "Car with id = " + carId + " was successfully deleted";
     }
