@@ -8,10 +8,7 @@ import com.innowise.carmicroservice.entity.RentEntity;
 import com.innowise.carmicroservice.exception.BadRequestException;
 import com.innowise.carmicroservice.exception.NotFoundException;
 import com.innowise.carmicroservice.mapper.RentMapperImpl;
-import com.innowise.carmicroservice.repository.CarRepository;
-import com.innowise.carmicroservice.repository.PaymentRepository;
-import com.innowise.carmicroservice.repository.PriceRepository;
-import com.innowise.carmicroservice.repository.RentRepository;
+import com.innowise.carmicroservice.repository.*;
 import com.innowise.carmicroservice.service.RentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,6 +21,7 @@ import java.util.Optional;
 public class RentServiceImpl implements RentService {
 
     private final RentRepository rentRepository;
+    private final ReservationRepository reservationRepository;
     private final PaymentRepository paymentRepository;
     private final CarRepository carRepository;
     private final PriceRepository priceRepository;
@@ -40,6 +38,17 @@ public class RentServiceImpl implements RentService {
             throw new NotFoundException("Rent with id = " + rentId + " not found");
         }
         return RentMapperImpl.INSTANCE.rentEntityToRentDto(optionalRent.get());
+    }
+
+    @Override
+    public boolean isHasRentOrReservation(Long clientId) {
+        boolean hasRent = rentRepository.existsByClientId(clientId);
+        boolean hasReservation = reservationRepository.existsByClientId(clientId);
+        if(!hasRent && !hasReservation) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
