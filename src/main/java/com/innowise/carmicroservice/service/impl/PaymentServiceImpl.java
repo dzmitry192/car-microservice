@@ -1,5 +1,6 @@
 package com.innowise.carmicroservice.service.impl;
 
+import avro.NotificationRequest;
 import com.innowise.carmicroservice.dto.payment.CreatePaymentDto;
 import com.innowise.carmicroservice.dto.payment.PaymentDto;
 import com.innowise.carmicroservice.dto.payment.UpdatePaymentDto;
@@ -7,11 +8,14 @@ import com.innowise.carmicroservice.entity.PaymentEntity;
 import com.innowise.carmicroservice.entity.RentEntity;
 import com.innowise.carmicroservice.exception.BadRequestException;
 import com.innowise.carmicroservice.exception.NotFoundException;
+import com.innowise.carmicroservice.kafka.KafkaProducers;
 import com.innowise.carmicroservice.mapper.PaymentMapperImpl;
 import com.innowise.carmicroservice.repository.PaymentRepository;
 import com.innowise.carmicroservice.repository.RentRepository;
+import com.innowise.carmicroservice.security.service.CustomUserDetails;
 import com.innowise.carmicroservice.service.PaymentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,6 +27,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final RentRepository rentRepository;
+    private final KafkaProducers kafkaProducers;
 
     @Override
     public List<PaymentDto> getPayments() {
@@ -52,6 +57,11 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setClientId(clientId);
         payment.setRentId(rentId);
 
+        kafkaProducers.sendNotificationRequest(new NotificationRequest(
+                ((CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getDetails()).getEmail(),
+                "Оплата аренды",
+                "Вы успешно оплати аренду авто на сумму - " + payment.getAmount()
+        ));
 
         return PaymentMapperImpl.INSTANCE.paymentEntityToPaymentDto(paymentRepository.save(payment));
     }

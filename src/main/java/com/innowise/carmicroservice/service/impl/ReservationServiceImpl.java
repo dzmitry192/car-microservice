@@ -1,5 +1,7 @@
 package com.innowise.carmicroservice.service.impl;
 
+import avro.NotificationRequest;
+import avro.UserDetails;
 import com.innowise.carmicroservice.dto.reservation.CreateReservationDto;
 import com.innowise.carmicroservice.dto.reservation.ReservationDto;
 import com.innowise.carmicroservice.dto.reservation.UpdateReservationDto;
@@ -7,11 +9,14 @@ import com.innowise.carmicroservice.entity.CarEntity;
 import com.innowise.carmicroservice.entity.ReservationEntity;
 import com.innowise.carmicroservice.exception.BadRequestException;
 import com.innowise.carmicroservice.exception.NotFoundException;
+import com.innowise.carmicroservice.kafka.KafkaProducers;
 import com.innowise.carmicroservice.mapper.ReservationMapperImpl;
 import com.innowise.carmicroservice.repository.CarRepository;
 import com.innowise.carmicroservice.repository.ReservationRepository;
+import com.innowise.carmicroservice.security.service.CustomUserDetails;
 import com.innowise.carmicroservice.service.ReservationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,6 +28,7 @@ public class ReservationServiceImpl implements ReservationService {
 
     private final CarRepository carRepository;
     private final ReservationRepository reservationRepository;
+    private final KafkaProducers kafkaProducers;
 
     @Override
     public List<ReservationDto> getReservations() {
@@ -56,6 +62,12 @@ public class ReservationServiceImpl implements ReservationService {
 
         car.setUsed(true);
         carRepository.save(car);
+
+        kafkaProducers.sendNotificationRequest(new NotificationRequest(
+                ((CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getDetails()).getEmail(),
+                "Бронирование авто",
+                "Вы успешно забронировали авто с номером - " + car.getLicensePlate() + " на период с " + reservation.getReservationStartDate() + " до " + reservation.getReservationEndDate()
+        ));
 
         return ReservationMapperImpl.INSTANCE.reservationEntityToReservationDto(reservationRepository.save(reservation));
     }

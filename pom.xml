@@ -148,6 +148,7 @@
                     <subjectPatterns>
                         <param>^UserDetailsRequest$</param>
                         <param>^UserDetailsResponse$</param>
+                        <param>^NotificationRequest</param>
                         <param>^DeleteClientRequest</param>
                         <param>^DeleteClientResponse$</param>
                     </subjectPatterns>

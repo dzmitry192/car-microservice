@@ -1,5 +1,6 @@
 package com.innowise.carmicroservice.service.impl;
 
+import avro.NotificationRequest;
 import com.innowise.carmicroservice.dto.rent.CreateRentDto;
 import com.innowise.carmicroservice.dto.rent.RentDto;
 import com.innowise.carmicroservice.dto.rent.UpdateRentDto;
@@ -7,10 +8,13 @@ import com.innowise.carmicroservice.entity.CarEntity;
 import com.innowise.carmicroservice.entity.RentEntity;
 import com.innowise.carmicroservice.exception.BadRequestException;
 import com.innowise.carmicroservice.exception.NotFoundException;
+import com.innowise.carmicroservice.kafka.KafkaProducers;
 import com.innowise.carmicroservice.mapper.RentMapperImpl;
 import com.innowise.carmicroservice.repository.*;
+import com.innowise.carmicroservice.security.service.CustomUserDetails;
 import com.innowise.carmicroservice.service.RentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,6 +29,7 @@ public class RentServiceImpl implements RentService {
     private final PaymentRepository paymentRepository;
     private final CarRepository carRepository;
     private final PriceRepository priceRepository;
+    private final KafkaProducers kafkaProducers;
 
     @Override
     public List<RentDto> getRents() {
@@ -74,6 +79,12 @@ public class RentServiceImpl implements RentService {
         car.setUsed(true);
         car.setRentId(savedRent.getId());
         carRepository.save(car);
+
+        kafkaProducers.sendNotificationRequest(new NotificationRequest(
+                ((CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getDetails()).getEmail(),
+                "Аренда авто",
+                "Вы успешно арендовали авто с номером - " + car.getLicensePlate() + " на период с " + rent.getRentalStartDate() + " до " + rent.getRentalEndDate() + " с суммой оплаты - " + rent.getRentalAmount()
+        ));
 
         return RentMapperImpl.INSTANCE.rentEntityToRentDto(savedRent);
     }
