@@ -1,20 +1,18 @@
-package com.innowise.carmicroservice.entity;
+package com.innowise.carmicroservice.dto.reservation;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
-@Entity
-@Table(name = "reservation")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ReservationEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class ReservationDto {
+    @NotNull
     private Long id;
     @NotNull(message = "Reservation start date cannot be empty")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
@@ -22,6 +20,4 @@ public class ReservationEntity {
     @NotNull(message = "Reservation end date cannot be empty")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
     private Date reservationEndDate;
-    private Long carId;
-    private Long clientId;
 }

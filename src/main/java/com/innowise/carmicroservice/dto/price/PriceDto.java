@@ -1,21 +1,20 @@
-package com.innowise.carmicroservice.entity;
+package com.innowise.carmicroservice.dto.price;
 
-import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 
-@Entity
-@Table(name = "prices")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PriceEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class PriceDto {
     @NotNull
+    private Long id;
+    @NotBlank
     @Min(value = 1, message = "Hour's price should not be less than 0")
     private int hour;
     @NotNull
