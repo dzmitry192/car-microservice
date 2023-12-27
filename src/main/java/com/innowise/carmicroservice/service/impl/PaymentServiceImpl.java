@@ -1,11 +1,14 @@
 package com.innowise.carmicroservice.service.impl;
 
+import avro.ClientActionRequest;
 import avro.NotificationRequest;
 import com.innowise.carmicroservice.dto.payment.CreatePaymentDto;
 import com.innowise.carmicroservice.dto.payment.PaymentDto;
 import com.innowise.carmicroservice.dto.payment.UpdatePaymentDto;
 import com.innowise.carmicroservice.entity.PaymentEntity;
 import com.innowise.carmicroservice.entity.RentEntity;
+import com.innowise.carmicroservice.enums.ActionEnum;
+import com.innowise.carmicroservice.enums.ActionTypeEnum;
 import com.innowise.carmicroservice.exception.BadRequestException;
 import com.innowise.carmicroservice.exception.NotFoundException;
 import com.innowise.carmicroservice.kafka.KafkaProducers;
@@ -18,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,7 +35,14 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public List<PaymentDto> getPayments() {
-        return PaymentMapperImpl.INSTANCE.toPaymentDtosList(paymentRepository.findAll());
+        List<PaymentDto> paymentDtoList = PaymentMapperImpl.INSTANCE.toPaymentDtosList(paymentRepository.findAll());
+        kafkaProducers.sendClientActionRequest(new ClientActionRequest(
+                ((CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getEmail(),
+                ActionEnum.GET_PAYMENTS.getAction(),
+                ActionTypeEnum.GET_PAYMENTS_TYPE.name(),
+                LocalDateTime.now().toString()
+        ));
+        return paymentDtoList;
     }
 
     @Override
@@ -40,7 +51,14 @@ public class PaymentServiceImpl implements PaymentService {
         if (optionalPayment.isEmpty()) {
             throw new NotFoundException("Payment with id = " + paymentId + " not found");
         }
-        return PaymentMapperImpl.INSTANCE.paymentEntityToPaymentDto(optionalPayment.get());
+        PaymentDto paymentDto = PaymentMapperImpl.INSTANCE.paymentEntityToPaymentDto(optionalPayment.get());
+        kafkaProducers.sendClientActionRequest(new ClientActionRequest(
+                ((CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getEmail(),
+                ActionEnum.GET_PAYMENT.getAction() + paymentDto.getId(),
+                ActionTypeEnum.GET_PAYMENTS_TYPE.name(),
+                LocalDateTime.now().toString()
+        ));
+        return paymentDto;
     }
 
     @Override
@@ -57,13 +75,22 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setClientId(clientId);
         payment.setRentId(rentId);
 
+        PaymentDto paymentDto = PaymentMapperImpl.INSTANCE.paymentEntityToPaymentDto(paymentRepository.save(payment));
+
         kafkaProducers.sendNotificationRequest(new NotificationRequest(
                 ((CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getDetails()).getEmail(),
                 "Оплата аренды",
                 "Вы успешно оплати аренду авто на сумму - " + payment.getAmount()
         ));
 
-        return PaymentMapperImpl.INSTANCE.paymentEntityToPaymentDto(paymentRepository.save(payment));
+        kafkaProducers.sendClientActionRequest(new ClientActionRequest(
+                ((CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getEmail(),
+                ActionEnum.CREATE_PAYMENT.getAction() + paymentDto.getId(),
+                ActionTypeEnum.CREATE_PAYMENT_TYPE.name(),
+                LocalDateTime.now().toString()
+        ));
+
+        return paymentDto;
     }
 
     @Override
@@ -73,7 +100,16 @@ public class PaymentServiceImpl implements PaymentService {
             throw new NotFoundException("Payment with id = " + paymentId + " not found");
         }
         PaymentEntity payment = optionalPayment.get();
-        return PaymentMapperImpl.INSTANCE.paymentEntityToPaymentDto(paymentRepository.save(PaymentMapperImpl.INSTANCE.updatePaymentDtoToPaymentDto(updatePaymentDto, payment)));
+        PaymentDto paymentDto = PaymentMapperImpl.INSTANCE.paymentEntityToPaymentDto(paymentRepository.save(PaymentMapperImpl.INSTANCE.updatePaymentDtoToPaymentDto(updatePaymentDto, payment)));
+
+        kafkaProducers.sendClientActionRequest(new ClientActionRequest(
+                ((CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getEmail(),
+                ActionEnum.UPDATE_PAYMENT.getAction() + paymentDto.getId(),
+                ActionTypeEnum.UPDATE_PAYMENT_TYPE.name(),
+                LocalDateTime.now().toString()
+        ));
+
+        return paymentDto;
     }
 
     @Override
@@ -89,6 +125,14 @@ public class PaymentServiceImpl implements PaymentService {
         rentRepository.save(rent);
 
         paymentRepository.delete(payment);
+
+        kafkaProducers.sendClientActionRequest(new ClientActionRequest(
+                ((CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getEmail(),
+                ActionEnum.DELETE_PAYMENT.getAction() + paymentId,
+                ActionTypeEnum.DELETE_PAYMENT_TYPE.name(),
+                LocalDateTime.now().toString()
+        ));
+
         return "Payment with id = " + paymentId + " was successfully deleted";
     }
 }

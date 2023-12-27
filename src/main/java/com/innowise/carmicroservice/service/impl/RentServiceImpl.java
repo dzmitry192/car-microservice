@@ -1,11 +1,14 @@
 package com.innowise.carmicroservice.service.impl;
 
+import avro.ClientActionRequest;
 import avro.NotificationRequest;
 import com.innowise.carmicroservice.dto.rent.CreateRentDto;
 import com.innowise.carmicroservice.dto.rent.RentDto;
 import com.innowise.carmicroservice.dto.rent.UpdateRentDto;
 import com.innowise.carmicroservice.entity.CarEntity;
 import com.innowise.carmicroservice.entity.RentEntity;
+import com.innowise.carmicroservice.enums.ActionEnum;
+import com.innowise.carmicroservice.enums.ActionTypeEnum;
 import com.innowise.carmicroservice.exception.BadRequestException;
 import com.innowise.carmicroservice.exception.NotFoundException;
 import com.innowise.carmicroservice.kafka.KafkaProducers;
@@ -17,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,7 +37,16 @@ public class RentServiceImpl implements RentService {
 
     @Override
     public List<RentDto> getRents() {
-        return RentMapperImpl.INSTANCE.toRentDtosList(rentRepository.findAll());
+        List<RentDto> rentDtosList = RentMapperImpl.INSTANCE.toRentDtosList(rentRepository.findAll());
+
+        kafkaProducers.sendClientActionRequest(new ClientActionRequest(
+                ((CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getEmail(),
+                ActionEnum.GET_RENTS.getAction(),
+                ActionTypeEnum.GET_RENTS_TYPE.name(),
+                LocalDateTime.now().toString()
+        ));
+
+        return rentDtosList;
     }
 
     @Override
@@ -42,18 +55,23 @@ public class RentServiceImpl implements RentService {
         if (optionalRent.isEmpty()) {
             throw new NotFoundException("Rent with id = " + rentId + " not found");
         }
-        return RentMapperImpl.INSTANCE.rentEntityToRentDto(optionalRent.get());
+        RentDto rentDto = RentMapperImpl.INSTANCE.rentEntityToRentDto(optionalRent.get());
+
+        kafkaProducers.sendClientActionRequest(new ClientActionRequest(
+                ((CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getEmail(),
+                ActionEnum.GET_RENT.getAction() + rentDto.getId(),
+                ActionTypeEnum.GET_RENTS_TYPE.name(),
+                LocalDateTime.now().toString()
+        ));
+
+        return rentDto;
     }
 
     @Override
     public boolean isHasRentOrReservation(Long clientId) {
         boolean hasRent = rentRepository.existsByClientId(clientId);
         boolean hasReservation = reservationRepository.existsByClientId(clientId);
-        if(!hasRent && !hasReservation) {
-            return true;
-        } else {
-            return false;
-        }
+        return !hasRent && !hasReservation;
     }
 
     @Override
@@ -80,13 +98,22 @@ public class RentServiceImpl implements RentService {
         car.setRentId(savedRent.getId());
         carRepository.save(car);
 
+        RentDto rentDto = RentMapperImpl.INSTANCE.rentEntityToRentDto(savedRent);
+
         kafkaProducers.sendNotificationRequest(new NotificationRequest(
                 ((CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getDetails()).getEmail(),
                 "Аренда авто",
                 "Вы успешно арендовали авто с номером - " + car.getLicensePlate() + " на период с " + rent.getRentalStartDate() + " до " + rent.getRentalEndDate() + " с суммой оплаты - " + rent.getRentalAmount()
         ));
 
-        return RentMapperImpl.INSTANCE.rentEntityToRentDto(savedRent);
+        kafkaProducers.sendClientActionRequest(new ClientActionRequest(
+                ((CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getEmail(),
+                ActionEnum.CREATE_RENT.getAction() + rentDto.getId(),
+                ActionTypeEnum.CREATE_RENT_TYPE.name(),
+                LocalDateTime.now().toString()
+        ));
+
+        return rentDto;
     }
 
     @Override
@@ -96,7 +123,16 @@ public class RentServiceImpl implements RentService {
             throw new NotFoundException("Rent with id = " + rentId + " not found");
         }
         RentEntity rent = optionalRent.get();
-        return RentMapperImpl.INSTANCE.rentEntityToRentDto(rentRepository.save(RentMapperImpl.INSTANCE.updateRentDtoToRentEntity(updateRentDto, rent)));
+        RentDto rentDto = RentMapperImpl.INSTANCE.rentEntityToRentDto(rentRepository.save(RentMapperImpl.INSTANCE.updateRentDtoToRentEntity(updateRentDto, rent)));
+
+        kafkaProducers.sendClientActionRequest(new ClientActionRequest(
+                ((CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getEmail(),
+                ActionEnum.UPDATE_RENT.getAction() + rentDto.getId(),
+                ActionTypeEnum.UPDATE_RENT_TYPE.name(),
+                LocalDateTime.now().toString()
+        ));
+
+        return rentDto;
     }
 
     @Override
@@ -113,6 +149,13 @@ public class RentServiceImpl implements RentService {
         carRepository.save(car);
 
         rentRepository.delete(rent);
+
+        kafkaProducers.sendClientActionRequest(new ClientActionRequest(
+                ((CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getEmail(),
+                ActionEnum.DELETE_RENT.getAction() + rentId,
+                ActionTypeEnum.DELETE_RENT_TYPE.name(),
+                LocalDateTime.now().toString()
+        ));
 
         return "Rent with id = " + rentId + " was successfully deleted";
     }

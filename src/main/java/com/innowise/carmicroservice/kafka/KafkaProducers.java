@@ -1,5 +1,6 @@
 package com.innowise.carmicroservice.kafka;
 
+import avro.ClientActionRequest;
 import avro.DeleteClientResponse;
 import avro.NotificationRequest;
 import avro.UserDetailsRequest;
@@ -19,6 +20,8 @@ public class KafkaProducers {
     private String topicDeleteClientResponse;
     @Value(value = "${kafka.topics.notification_request}")
     private String topicNotificationRequest;
+    @Value(value = "${kafka.topics.client_action_request}")
+    private String topicClientActionRequest;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public void sendUserDetailsRequest(UserDetailsRequest userDetailsRequest) {
@@ -31,5 +34,9 @@ public class KafkaProducers {
 
     public void sendNotificationRequest(NotificationRequest notificationRequest) {
         kafkaTemplate.send(topicNotificationRequest, notificationRequest);
+    }
+
+    public void sendClientActionRequest(ClientActionRequest clientActionRequest) {
+        kafkaTemplate.send(topicClientActionRequest, clientActionRequest);
     }
 }
