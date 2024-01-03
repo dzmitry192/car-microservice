@@ -15,7 +15,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
-@RequestMapping("/reservation")
+@RequestMapping("/car/reservation")
 @RequiredArgsConstructor
 public class ReservationController {
 

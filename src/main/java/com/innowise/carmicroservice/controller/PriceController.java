@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/price")
+@RequestMapping("/car/price")
 @RequiredArgsConstructor
 @Validated
 public class PriceController {
